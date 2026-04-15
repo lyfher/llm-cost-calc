@@ -1,0 +1,157 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { providers } from "../data/providers";
+---
+
+<Layout title="LLM Cost Calculator — Compare API Prices Instantly">
+  <main class="max-w-5xl mx-auto px-4 py-12">
+
+    <!-- Hero -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">
+        LLM API Cost Calculator
+      </h1>
+      <p class="text-gray-400 text-lg max-w-xl mx-auto">
+        Enter your monthly token usage and instantly see what you'd pay across
+        every major AI provider.
+      </p>
+    </div>
+
+    <!-- Calculator card -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 mb-10">
+      <!-- Inputs row -->
+      <div class="grid sm:grid-cols-2 gap-6 mb-8">
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-2">
+            Input tokens / month
+          </label>
+          <div class="flex items-center gap-3">
+            <input
+              id="inputTokens"
+              type="number"
+              value="1000000"
+              min="0"
+              max="1000000000"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-violet-500 transition-colors"
+            />
+          </div>
+          <p class="text-xs text-gray-600 mt-1">e.g. 1 000 000 = 1M tokens</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-400 mb-2">
+            Output tokens / month
+          </label>
+          <input
+            id="outputTokens"
+            type="number"
+            value="500000"
+            min="0"
+            max="1000000000"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-violet-500 transition-colors"
+          />
+          <p class="text-xs text-gray-600 mt-1">Usually 20–50% of input volume</p>
+        </div>
+      </div>
+
+      <!-- Quick presets -->
+      <div class="flex flex-wrap gap-2 mb-8">
+        <span class="text-xs text-gray-500 self-center mr-1">Presets:</span>
+        {[
+          { label: "Side project", input: 100_000, output: 50_000 },
+          { label: "Small app", input: 1_000_000, output: 500_000 },
+          { label: "Mid-scale", input: 10_000_000, output: 5_000_000 },
+          { label: "Large scale", input: 100_000_000, output: 50_000_000 },
+        ].map(p => (
+          <button
+            class="preset-btn text-xs px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-colors cursor-pointer"
+            data-input={p.input}
+            data-output={p.output}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      <!-- Results grid -->
+      <div id="results" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+
+    <!-- CTA to compare page -->
+    <div class="text-center">
+      <a
+        href="/compare"
+        class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
+      >
+        Compare all models side by side →
+      </a>
+    </div>
+
+  </main>
+</Layout>
+
+<script define:vars={{ providers }}>
+  const inputEl = document.getElementById("inputTokens");
+  const outputEl = document.getElementById("outputTokens");
+  const resultsEl = document.getElementById("results");
+
+  function calcCost(inputTokens, outputTokens, inputPer1M, outputPer1M) {
+    return (inputTokens / 1_000_000) * inputPer1M +
+           (outputTokens / 1_000_000) * outputPer1M;
+  }
+
+  function fmt(n) {
+    if (n < 0.01) return "< $0.01";
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function render() {
+    const input = parseFloat(inputEl.value) || 0;
+    const output = parseFloat(outputEl.value) || 0;
+
+    // Build flat list of all model results sorted by cost
+    const rows = [];
+    for (const provider of providers) {
+      for (const model of provider.models) {
+        const monthly = calcCost(input, output, model.inputPer1M, model.outputPer1M);
+        rows.push({ provider, model, monthly });
+      }
+    }
+    rows.sort((a, b) => a.monthly - b.monthly);
+
+    resultsEl.innerHTML = rows.map(({ provider, model, monthly }) => `
+      <div class="bg-gray-800/60 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <div class="text-xs font-medium uppercase tracking-wider mb-0.5" style="color:${provider.color}">${provider.name}</div>
+            <div class="text-sm font-semibold text-white">${model.name}</div>
+          </div>
+          <div class="text-right">
+            <div class="text-2xl font-bold text-white">${fmt(monthly)}</div>
+            <div class="text-xs text-gray-500">/ month</div>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-700">
+          <span>${fmt(monthly / 30)} / day</span>
+          <span>ctx: ${model.contextWindow}</span>
+          <a href="${provider.signupUrl}" target="_blank" rel="noopener noreferrer"
+             class="text-violet-400 hover:text-violet-300 font-medium transition-colors">
+            Sign up →
+          </a>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  inputEl.addEventListener("input", render);
+  outputEl.addEventListener("input", render);
+
+  document.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      inputEl.value = btn.dataset.input;
+      outputEl.value = btn.dataset.output;
+      render();
+    });
+  });
+
+  render();
+</script>

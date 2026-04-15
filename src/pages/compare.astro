@@ -1,0 +1,172 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { providers } from "../data/providers";
+---
+
+<Layout
+  title="Compare All LLM API Prices — Side by Side"
+  description="Full comparison table of all LLM API models and prices. OpenAI, Anthropic, Google, Mistral, Groq and more."
+>
+  <main class="max-w-5xl mx-auto px-4 py-12">
+
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold text-white mb-3">Compare All Models</h1>
+      <p class="text-gray-400">Set your monthly usage below and compare every model at once.</p>
+    </div>
+
+    <!-- Usage inputs (compact) -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-8 flex flex-wrap gap-4 items-end">
+      <div class="flex-1 min-w-40">
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Input tokens / month</label>
+        <input id="inputTokens" type="number" value="1000000" min="0"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors" />
+      </div>
+      <div class="flex-1 min-w-40">
+        <label class="block text-xs font-medium text-gray-400 mb-1.5">Output tokens / month</label>
+        <input id="outputTokens" type="number" value="500000" min="0"
+          class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-violet-500 transition-colors" />
+      </div>
+      <div class="flex flex-wrap gap-2 items-center">
+        {[
+          { label: "Side project", input: 100_000, output: 50_000 },
+          { label: "Small app", input: 1_000_000, output: 500_000 },
+          { label: "Mid-scale", input: 10_000_000, output: 5_000_000 },
+          { label: "Large scale", input: 100_000_000, output: 50_000_000 },
+        ].map(p => (
+          <button
+            class="preset-btn text-xs px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-colors cursor-pointer"
+            data-input={p.input}
+            data-output={p.output}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- Sort controls -->
+    <div class="flex items-center gap-3 mb-4 text-sm text-gray-400">
+      <span>Sort by:</span>
+      <button id="sortCost" class="sort-btn px-3 py-1 rounded-lg bg-violet-600 text-white text-xs font-medium" data-sort="cost">Monthly cost</button>
+      <button id="sortProvider" class="sort-btn px-3 py-1 rounded-lg border border-gray-700 text-gray-400 hover:border-gray-500 text-xs transition-colors" data-sort="provider">Provider</button>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wider">
+            <th class="text-left px-5 py-3 font-medium">Model</th>
+            <th class="text-right px-4 py-3 font-medium">Input /1M</th>
+            <th class="text-right px-4 py-3 font-medium">Output /1M</th>
+            <th class="text-right px-5 py-3 font-medium">Monthly cost</th>
+            <th class="text-right px-5 py-3 font-medium hidden sm:table-cell">Daily cost</th>
+            <th class="text-center px-4 py-3 font-medium">Context</th>
+            <th class="px-4 py-3"></th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <p class="text-xs text-gray-600 mt-4 text-center">
+      Prices are approximate. Always verify at each provider's pricing page.
+    </p>
+  </main>
+</Layout>
+
+<script define:vars={{ providers }}>
+  const inputEl = document.getElementById("inputTokens");
+  const outputEl = document.getElementById("outputTokens");
+  const tbody = document.getElementById("tableBody");
+  let sortMode = "cost";
+
+  function calcCost(inp, out, inputPer1M, outputPer1M) {
+    return (inp / 1_000_000) * inputPer1M + (out / 1_000_000) * outputPer1M;
+  }
+
+  function fmt(n) {
+    if (n < 0.01) return "< $0.01";
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function fmtRate(n) {
+    return "$" + n.toFixed(n < 1 ? 3 : 2);
+  }
+
+  function render() {
+    const input = parseFloat(inputEl.value) || 0;
+    const output = parseFloat(outputEl.value) || 0;
+
+    const rows = [];
+    for (const provider of providers) {
+      for (const model of provider.models) {
+        const monthly = calcCost(input, output, model.inputPer1M, model.outputPer1M);
+        rows.push({ provider, model, monthly });
+      }
+    }
+
+    if (sortMode === "cost") {
+      rows.sort((a, b) => a.monthly - b.monthly);
+    } else {
+      rows.sort((a, b) => a.provider.name.localeCompare(b.provider.name) || a.monthly - b.monthly);
+    }
+
+    const cheapest = rows[0]?.monthly ?? 0;
+
+    tbody.innerHTML = rows.map(({ provider, model, monthly }, i) => {
+      const isCheapest = i === 0 && sortMode === "cost";
+      const barWidth = cheapest === 0 ? 0 : Math.min(100, (monthly / rows[rows.length - 1].monthly) * 100);
+      return `
+        <tr class="border-b border-gray-800/60 hover:bg-gray-800/30 transition-colors group">
+          <td class="px-5 py-3.5">
+            <div class="text-xs font-medium mb-0.5" style="color:${provider.color}">${provider.name}</div>
+            <div class="text-white font-medium">${model.name}</div>
+          </td>
+          <td class="text-right px-4 py-3.5 text-gray-400 font-mono text-xs">${fmtRate(model.inputPer1M)}</td>
+          <td class="text-right px-4 py-3.5 text-gray-400 font-mono text-xs">${fmtRate(model.outputPer1M)}</td>
+          <td class="text-right px-5 py-3.5">
+            <div class="text-white font-bold">${fmt(monthly)}</div>
+            <div class="mt-1 h-1 rounded-full bg-gray-800 overflow-hidden w-20 ml-auto">
+              <div class="h-full rounded-full transition-all" style="width:${barWidth}%;background:${provider.color}"></div>
+            </div>
+          </td>
+          <td class="text-right px-5 py-3.5 text-gray-500 text-xs hidden sm:table-cell">${fmt(monthly / 30)}</td>
+          <td class="text-center px-4 py-3.5 text-gray-500 text-xs">${model.contextWindow}</td>
+          <td class="px-4 py-3.5 text-right">
+            <a href="${provider.signupUrl}" target="_blank" rel="noopener noreferrer"
+               class="text-xs text-violet-400 hover:text-violet-300 font-medium transition-colors whitespace-nowrap">
+              Sign up →
+            </a>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  inputEl.addEventListener("input", render);
+  outputEl.addEventListener("input", render);
+
+  document.querySelectorAll(".preset-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      inputEl.value = btn.dataset.input;
+      outputEl.value = btn.dataset.output;
+      render();
+    });
+  });
+
+  document.querySelectorAll(".sort-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      sortMode = btn.dataset.sort;
+      document.querySelectorAll(".sort-btn").forEach(b => {
+        b.classList.remove("bg-violet-600", "text-white");
+        b.classList.add("border", "border-gray-700", "text-gray-400");
+      });
+      btn.classList.add("bg-violet-600", "text-white");
+      btn.classList.remove("border", "border-gray-700", "text-gray-400");
+      render();
+    });
+  });
+
+  render();
+</script>
