@@ -35,18 +35,23 @@ import { providers, USE_CASES, consumerProviders } from "../data/providers";
     ══════════════════════════════════════════════════════════ -->
     <div id="userMode">
 
-      <!-- Use case filter -->
+      <!-- Use case filter (user mode — only relevant categories) -->
       <div class="mb-8">
         <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 font-medium">¿Para qué la usas?</p>
-        <div class="flex flex-wrap gap-2" id="userCaseFilters">
-          <button class="ucase-btn active text-xs px-3 py-2 rounded-lg border border-violet-500 bg-violet-500/10 text-violet-300 transition-all cursor-pointer" data-case="all">
-            🌐 Todas
-          </button>
-          {USE_CASES.map(uc => (
+        <div class="flex flex-wrap gap-2">
+          {[
+            { id: "all",          emoji: "🌐", label: "Todas" },
+            { id: "everyday",     emoji: "☀️", label: "Uso diario" },
+            { id: "coding",       emoji: "💻", label: "Programar" },
+            { id: "social",       emoji: "🐦", label: "Redes sociales" },
+            { id: "research",     emoji: "🔬", label: "Investigación" },
+            { id: "writing",      emoji: "✍️", label: "Redacción" },
+            { id: "long-context", emoji: "📄", label: "Documentos largos" },
+            { id: "reasoning",    emoji: "🧠", label: "Razonamiento" },
+          ].map(uc => (
             <button
-              class="ucase-btn text-xs px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-all cursor-pointer"
+              class={`ucase-btn text-xs px-3 py-2 rounded-lg border transition-all cursor-pointer ${uc.id === "all" ? "border-violet-500 bg-violet-500/10 text-violet-300" : "border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300"}`}
               data-case={uc.id}
-              title={uc.description}
             >
               {uc.emoji} {uc.label}
             </button>
