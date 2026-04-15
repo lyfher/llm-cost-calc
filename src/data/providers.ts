@@ -257,6 +257,247 @@ export const providers: Provider[] = [
   },
 ]
 
+// ─── Consumer subscription plans ────────────────────────────────────────────
+
+export interface ConsumerPlan {
+  id: string
+  name: string           // e.g. "Plus"
+  price: number          // USD/month (0 = free)
+  priceLabel: string     // e.g. "Gratis" | "$20/mes"
+  features: string[]     // bullet points shown to user
+  badge?: string         // e.g. "Más popular"
+  highlight?: boolean
+  signupUrl: string
+}
+
+export interface ConsumerProvider {
+  id: string
+  name: string
+  color: string
+  logoEmoji: string
+  description: string    // one line: what this AI is best at for consumers
+  tags: UseCase[]
+  plans: ConsumerPlan[]
+}
+
+export const consumerProviders: ConsumerProvider[] = [
+  {
+    id: "chatgpt",
+    name: "ChatGPT",
+    color: "#10a37f",
+    logoEmoji: "🤖",
+    description: "El asistente más popular. Ideal para tareas cotidianas, redacción y preguntas generales.",
+    tags: ["everyday", "writing", "coding"],
+    plans: [
+      {
+        id: "free",
+        name: "Gratis",
+        price: 0,
+        priceLabel: "Gratis",
+        features: [
+          "GPT-4o con límites diarios",
+          "Generación de imágenes limitada",
+          "Acceso web básico",
+        ],
+        signupUrl: "https://chat.openai.com",
+      },
+      {
+        id: "plus",
+        name: "Plus",
+        price: 20,
+        priceLabel: "$20/mes",
+        badge: "Más popular",
+        highlight: true,
+        features: [
+          "GPT-4o sin límites",
+          "o4-mini para razonamiento",
+          "Generación de imágenes con DALL·E",
+          "Acceso a GPTs y plugins",
+          "Memoria personalizada",
+        ],
+        signupUrl: "https://chat.openai.com",
+      },
+      {
+        id: "pro",
+        name: "Pro",
+        price: 200,
+        priceLabel: "$200/mes",
+        features: [
+          "Todo lo de Plus",
+          "o3 sin límites (el más potente)",
+          "Acceso prioritario en horas punta",
+          "Para uso profesional intensivo",
+        ],
+        signupUrl: "https://chat.openai.com",
+      },
+    ],
+  },
+  {
+    id: "claude",
+    name: "Claude",
+    color: "#c96442",
+    logoEmoji: "🧡",
+    description: "El mejor para programar, analizar documentos y razonamiento profundo.",
+    tags: ["coding", "research", "writing", "reasoning"],
+    plans: [
+      {
+        id: "free",
+        name: "Gratis",
+        price: 0,
+        priceLabel: "Gratis",
+        features: [
+          "Claude Sonnet con límites diarios",
+          "Contexto de 200K tokens",
+          "Sin tarjeta de crédito",
+        ],
+        signupUrl: "https://claude.ai",
+      },
+      {
+        id: "pro",
+        name: "Pro",
+        price: 20,
+        priceLabel: "$20/mes",
+        badge: "Mejor para devs",
+        highlight: true,
+        features: [
+          "Claude Sonnet 4 sin límites",
+          "Acceso a Claude Opus 4",
+          "Proyectos y memoria",
+          "Subir archivos y PDFs",
+          "Claude Code incluido",
+        ],
+        signupUrl: "https://claude.ai",
+      },
+      {
+        id: "max",
+        name: "Max",
+        price: 100,
+        priceLabel: "$100/mes",
+        features: [
+          "5× más uso que Pro",
+          "Opus 4 prioritario",
+          "Para uso profesional intensivo",
+        ],
+        signupUrl: "https://claude.ai",
+      },
+    ],
+  },
+  {
+    id: "gemini",
+    name: "Gemini",
+    color: "#4285f4",
+    logoEmoji: "♊",
+    description: "Integrado con Google. Ideal para investigación, documentos largos y el ecosistema Google.",
+    tags: ["research", "long-context", "everyday"],
+    plans: [
+      {
+        id: "free",
+        name: "Gratis",
+        price: 0,
+        priceLabel: "Gratis",
+        features: [
+          "Gemini 2.0 Flash",
+          "Contexto de 1M tokens",
+          "Integración con Google Docs/Drive",
+        ],
+        signupUrl: "https://gemini.google.com",
+      },
+      {
+        id: "advanced",
+        name: "Advanced",
+        price: 20,
+        priceLabel: "$20/mes",
+        badge: "Mejor contexto",
+        highlight: true,
+        features: [
+          "Gemini 2.5 Pro (el más avanzado de Google)",
+          "1M tokens de contexto",
+          "Integración con Gmail, Docs, Drive",
+          "Incluye Google One 2TB",
+          "Gems personalizados",
+        ],
+        signupUrl: "https://one.google.com/about/ai-premium",
+      },
+    ],
+  },
+  {
+    id: "grok",
+    name: "Grok",
+    color: "#e7e9ea",
+    logoEmoji: "𝕏",
+    description: "Integrado en X (Twitter). El mejor para analizar tendencias, noticias y contexto social.",
+    tags: ["social", "research", "everyday"],
+    plans: [
+      {
+        id: "premium",
+        name: "X Premium",
+        price: 8,
+        priceLabel: "$8/mes",
+        features: [
+          "Grok 3 con límites",
+          "Acceso desde X/Twitter",
+          "Análisis de tweets y tendencias",
+          "Verificación incluida",
+        ],
+        signupUrl: "https://x.com/i/premium_sign_up",
+      },
+      {
+        id: "premium-plus",
+        name: "X Premium+",
+        price: 16,
+        priceLabel: "$16/mes",
+        badge: "Mejor para X",
+        highlight: true,
+        features: [
+          "Grok 3 sin límites",
+          "Modo Think (razonamiento profundo)",
+          "Generación de imágenes",
+          "Sin anuncios en For You",
+          "Máxima visibilidad en X",
+        ],
+        signupUrl: "https://x.com/i/premium_sign_up",
+      },
+    ],
+  },
+  {
+    id: "perplexity",
+    name: "Perplexity",
+    color: "#20b8cd",
+    logoEmoji: "🔍",
+    description: "Motor de búsqueda con IA. Perfecto para investigar con fuentes verificadas en tiempo real.",
+    tags: ["research", "everyday"],
+    plans: [
+      {
+        id: "free",
+        name: "Gratis",
+        price: 0,
+        priceLabel: "Gratis",
+        features: [
+          "Búsqueda con IA ilimitada",
+          "Fuentes citadas en cada respuesta",
+          "5 búsquedas Pro al día",
+        ],
+        signupUrl: "https://perplexity.ai",
+      },
+      {
+        id: "pro",
+        name: "Pro",
+        price: 20,
+        priceLabel: "$20/mes",
+        badge: "Mejor para investigar",
+        highlight: true,
+        features: [
+          "Búsquedas Pro ilimitadas",
+          "Acceso a GPT-4o, Claude y Sonar",
+          "Subir imágenes y archivos",
+          "$5 en créditos de API incluidos",
+        ],
+        signupUrl: "https://perplexity.ai",
+      },
+    ],
+  },
+]
+
 export function calcMonthlyCost(
   inputTokens: number,
   outputTokens: number,

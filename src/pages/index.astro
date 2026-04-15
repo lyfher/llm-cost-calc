@@ -1,155 +1,265 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { providers, USE_CASES } from "../data/providers";
+import { providers, USE_CASES, consumerProviders } from "../data/providers";
 ---
 
-<Layout title="LLM Cost Calculator — Compare API Prices Instantly">
+<Layout title="LLM Cost Calculator — Compara precios de IA">
   <main class="max-w-5xl mx-auto px-4 py-12">
 
     <!-- Hero -->
-    <div class="text-center mb-12">
+    <div class="text-center mb-10">
       <h1 class="text-4xl sm:text-5xl font-bold text-white mb-4 leading-tight">
-        LLM API Cost Calculator
+        Compara todas las IAs
       </h1>
       <p class="text-gray-400 text-lg max-w-xl mx-auto">
-        Compara precios de todas las IAs en segundos. Filtra por lo que necesitas hacer.
+        Encuentra la mejor IA para ti — ya sea que pagues una suscripción o uses la API para tu app.
       </p>
     </div>
 
-    <!-- Use case filter -->
-    <div class="mb-8">
-      <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 font-medium">¿Para qué la usas?</p>
-      <div class="flex flex-wrap gap-2" id="useCaseFilters">
-        <button
-          class="use-case-btn active text-xs px-3 py-2 rounded-lg border border-violet-500 bg-violet-500/10 text-violet-300 transition-all cursor-pointer"
-          data-case="all"
-        >
-          🌐 Todas
+    <!-- MODE TOGGLE -->
+    <div class="flex justify-center mb-10">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-1.5 flex gap-1">
+        <button id="modeUser"
+          class="mode-btn active px-6 py-3 rounded-xl text-sm font-semibold transition-all bg-violet-600 text-white">
+          👤 Soy usuario
         </button>
-        {USE_CASES.map(uc => (
-          <button
-            class="use-case-btn text-xs px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-all cursor-pointer"
-            data-case={uc.id}
-            title={uc.description}
-          >
-            {uc.emoji} {uc.label}
-          </button>
-        ))}
+        <button id="modeDev"
+          class="mode-btn px-6 py-3 rounded-xl text-sm font-semibold transition-all text-gray-400 hover:text-white">
+          💻 Soy desarrollador
+        </button>
       </div>
     </div>
 
-    <!-- Calculator card -->
-    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 mb-10">
-      <!-- Inputs row -->
-      <div class="grid sm:grid-cols-2 gap-6 mb-8">
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-2">
-            Input tokens / mes
-          </label>
-          <div class="flex items-center gap-3">
-            <input
-              id="inputTokens"
-              type="number"
-              value="1000000"
-              min="0"
-              max="1000000000"
-              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-violet-500 transition-colors"
-            />
+    <!-- ══════════════════════════════════════════════════════════
+         USER MODE
+    ══════════════════════════════════════════════════════════ -->
+    <div id="userMode">
+
+      <!-- Use case filter -->
+      <div class="mb-8">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 font-medium">¿Para qué la usas?</p>
+        <div class="flex flex-wrap gap-2" id="userCaseFilters">
+          <button class="ucase-btn active text-xs px-3 py-2 rounded-lg border border-violet-500 bg-violet-500/10 text-violet-300 transition-all cursor-pointer" data-case="all">
+            🌐 Todas
+          </button>
+          {USE_CASES.map(uc => (
+            <button
+              class="ucase-btn text-xs px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-all cursor-pointer"
+              data-case={uc.id}
+              title={uc.description}
+            >
+              {uc.emoji} {uc.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Consumer providers -->
+      <div id="consumerGrid" class="space-y-6"></div>
+
+      <p class="text-xs text-gray-600 mt-6 text-center">
+        Precios en USD. Verifica siempre en la web oficial de cada proveedor.
+      </p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         DEV MODE
+    ══════════════════════════════════════════════════════════ -->
+    <div id="devMode" class="hidden">
+
+      <!-- Use case filter -->
+      <div class="mb-8">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 font-medium">¿Para qué la usas?</p>
+        <div class="flex flex-wrap gap-2" id="devCaseFilters">
+          <button class="dcase-btn active text-xs px-3 py-2 rounded-lg border border-violet-500 bg-violet-500/10 text-violet-300 transition-all cursor-pointer" data-case="all">
+            🌐 Todas
+          </button>
+          {USE_CASES.map(uc => (
+            <button
+              class="dcase-btn text-xs px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-all cursor-pointer"
+              data-case={uc.id}
+              title={uc.description}
+            >
+              {uc.emoji} {uc.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <!-- Calculator -->
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 mb-8">
+        <div class="grid sm:grid-cols-2 gap-6 mb-8">
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-2">Input tokens / mes</label>
+            <input id="inputTokens" type="number" value="1000000" min="0" max="1000000000"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-violet-500 transition-colors" />
+            <p class="text-xs text-gray-600 mt-1">Máx. 1,000M tokens</p>
           </div>
-          <p class="text-xs text-gray-600 mt-1">e.g. 1 000 000 = 1M tokens</p>
+          <div>
+            <label class="block text-sm font-medium text-gray-400 mb-2">Output tokens / mes</label>
+            <input id="outputTokens" type="number" value="500000" min="0" max="1000000000"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-violet-500 transition-colors" />
+            <p class="text-xs text-gray-600 mt-1">Generalmente 20–50% del input</p>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-400 mb-2">
-            Output tokens / mes
-          </label>
-          <input
-            id="outputTokens"
-            type="number"
-            value="500000"
-            min="0"
-            max="1000000000"
-            class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-violet-500 transition-colors"
-          />
-          <p class="text-xs text-gray-600 mt-1">Generalmente 20–50% del volumen de input</p>
+        <div class="flex flex-wrap gap-2 mb-8">
+          <span class="text-xs text-gray-500 self-center mr-1">Presets:</span>
+          {[
+            { label: "Side project", input: 100_000, output: 50_000 },
+            { label: "Small app", input: 1_000_000, output: 500_000 },
+            { label: "Mid-scale", input: 10_000_000, output: 5_000_000 },
+            { label: "Large scale", input: 100_000_000, output: 50_000_000 },
+          ].map(p => (
+            <button class="preset-btn text-xs px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-colors cursor-pointer"
+              data-input={p.input} data-output={p.output}>
+              {p.label}
+            </button>
+          ))}
         </div>
+        <div id="devResults" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
       </div>
 
-      <!-- Quick presets -->
-      <div class="flex flex-wrap gap-2 mb-8">
-        <span class="text-xs text-gray-500 self-center mr-1">Presets:</span>
-        {[
-          { label: "Side project", input: 100_000, output: 50_000 },
-          { label: "Small app", input: 1_000_000, output: 500_000 },
-          { label: "Mid-scale", input: 10_000_000, output: 5_000_000 },
-          { label: "Large scale", input: 100_000_000, output: 50_000_000 },
-        ].map(p => (
-          <button
-            class="preset-btn text-xs px-3 py-1.5 rounded-full border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-colors cursor-pointer"
-            data-input={p.input}
-            data-output={p.output}
-          >
-            {p.label}
-          </button>
-        ))}
+      <div class="text-center">
+        <a href="/compare" class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors">
+          Ver tabla completa de precios →
+        </a>
       </div>
-
-      <!-- Results grid -->
-      <div id="results" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
-    </div>
-
-    <!-- CTA to compare page -->
-    <div class="text-center">
-      <a
-        href="/compare"
-        class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-      >
-        Ver comparación completa →
-      </a>
     </div>
 
   </main>
 </Layout>
 
-<script define:vars={{ providers, USE_CASES }}>
-  const inputEl = document.getElementById("inputTokens");
-  const outputEl = document.getElementById("outputTokens");
-  const resultsEl = document.getElementById("results");
-  let activeCase = "all";
+<script define:vars={{ providers, USE_CASES, consumerProviders }}>
 
-  function calcCost(inputTokens, outputTokens, inputPer1M, outputPer1M) {
-    return (inputTokens / 1_000_000) * inputPer1M +
-           (outputTokens / 1_000_000) * outputPer1M;
+  // ── MODE TOGGLE ────────────────────────────────────────────────
+  const userMode = document.getElementById("userMode");
+  const devMode  = document.getElementById("devMode");
+
+  document.getElementById("modeUser").addEventListener("click", () => {
+    userMode.classList.remove("hidden");
+    devMode.classList.add("hidden");
+    document.getElementById("modeUser").classList.add("bg-violet-600","text-white");
+    document.getElementById("modeUser").classList.remove("text-gray-400");
+    document.getElementById("modeDev").classList.remove("bg-violet-600","text-white");
+    document.getElementById("modeDev").classList.add("text-gray-400");
+  });
+
+  document.getElementById("modeDev").addEventListener("click", () => {
+    devMode.classList.remove("hidden");
+    userMode.classList.add("hidden");
+    document.getElementById("modeDev").classList.add("bg-violet-600","text-white");
+    document.getElementById("modeDev").classList.remove("text-gray-400");
+    document.getElementById("modeUser").classList.remove("bg-violet-600","text-white");
+    document.getElementById("modeUser").classList.add("text-gray-400");
+    renderDev();
+  });
+
+  // ── USER MODE ──────────────────────────────────────────────────
+  let activeUserCase = "all";
+
+  function renderUser() {
+    const grid = document.getElementById("consumerGrid");
+    const filtered = activeUserCase === "all"
+      ? consumerProviders
+      : consumerProviders.filter(p => p.tags.includes(activeUserCase));
+
+    if (filtered.length === 0) {
+      grid.innerHTML = `<div class="text-center text-gray-500 py-8">No hay proveedores para este filtro.</div>`;
+      return;
+    }
+
+    grid.innerHTML = filtered.map(provider => `
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-2">
+          <span class="text-2xl">${provider.logoEmoji}</span>
+          <div>
+            <h2 class="text-white font-bold text-lg" style="color:${provider.color}">${provider.name}</h2>
+            <p class="text-gray-400 text-xs">${provider.description}</p>
+          </div>
+        </div>
+        <div class="grid sm:grid-cols-${Math.min(provider.plans.length, 3)} gap-4 mt-5">
+          ${provider.plans.map(plan => `
+            <div class="relative rounded-xl border p-4 flex flex-col gap-3 ${plan.highlight ? 'border-violet-500 bg-violet-500/5' : 'border-gray-700 bg-gray-800/40'}">
+              ${plan.badge ? `<div class="absolute -top-3 left-4 text-xs px-2 py-0.5 rounded-full bg-violet-600 text-white font-medium">${plan.badge}</div>` : ""}
+              <div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider">${plan.name}</div>
+                <div class="text-2xl font-bold text-white mt-0.5">${plan.priceLabel}</div>
+              </div>
+              <ul class="space-y-1.5 flex-1">
+                ${plan.features.map(f => `
+                  <li class="flex items-start gap-2 text-xs text-gray-300">
+                    <span class="text-violet-400 mt-0.5 shrink-0">✓</span>${f}
+                  </li>`).join("")}
+              </ul>
+              <a href="${plan.signupUrl}" target="_blank" rel="noopener noreferrer"
+                class="mt-2 block text-center text-xs font-semibold py-2 rounded-lg transition-colors ${plan.highlight ? 'bg-violet-600 hover:bg-violet-500 text-white' : 'border border-gray-600 hover:border-gray-500 text-gray-300'}">
+                Empezar ${plan.price === 0 ? "gratis" : "→"}
+              </a>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `).join("");
   }
 
+  document.querySelectorAll(".ucase-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeUserCase = btn.dataset.case;
+      document.querySelectorAll(".ucase-btn").forEach(b => {
+        b.classList.remove("border-violet-500","bg-violet-500/10","text-violet-300");
+        b.classList.add("border-gray-700","text-gray-400");
+      });
+      btn.classList.add("border-violet-500","bg-violet-500/10","text-violet-300");
+      btn.classList.remove("border-gray-700","text-gray-400");
+      renderUser();
+    });
+  });
+
+  // ── DEV MODE ───────────────────────────────────────────────────
+  let activeDevCase = "all";
+  const inputEl  = document.getElementById("inputTokens");
+  const outputEl = document.getElementById("outputTokens");
+
+  const MAX_TOKENS = 1_000_000_000
+
+  function clampInput(el) {
+    let v = parseFloat(el.value) || 0
+    if (v < 0) v = 0
+    if (v > MAX_TOKENS) v = MAX_TOKENS
+    el.value = v
+    return v
+  }
+
+  function calcCost(inp, out, inPer, outPer) {
+    return (inp / 1_000_000) * inPer + (out / 1_000_000) * outPer;
+  }
   function fmt(n) {
     if (n < 0.01) return "< $0.01";
     return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
-
   function tagLabel(tag) {
     const uc = USE_CASES.find(u => u.id === tag);
     return uc ? `${uc.emoji} ${uc.label}` : tag;
   }
 
-  function render() {
-    const input = parseFloat(inputEl.value) || 0;
-    const output = parseFloat(outputEl.value) || 0;
-
+  function renderDev() {
+    const input  = clampInput(inputEl);
+    const output = clampInput(outputEl);
     const rows = [];
     for (const provider of providers) {
       for (const model of provider.models) {
-        if (activeCase !== "all" && !model.tags.includes(activeCase)) continue;
+        if (activeDevCase !== "all" && !model.tags.includes(activeDevCase)) continue;
         const monthly = calcCost(input, output, model.inputPer1M, model.outputPer1M);
         rows.push({ provider, model, monthly });
       }
     }
     rows.sort((a, b) => a.monthly - b.monthly);
 
+    const resultsEl = document.getElementById("devResults");
     if (rows.length === 0) {
       resultsEl.innerHTML = `<div class="col-span-3 text-center text-gray-500 py-8">No hay modelos para este filtro.</div>`;
       return;
     }
-
     resultsEl.innerHTML = rows.map(({ provider, model, monthly }) => `
       <div class="bg-gray-800/60 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors flex flex-col gap-3">
         <div class="flex items-start justify-between">
@@ -163,51 +273,44 @@ import { providers, USE_CASES } from "../data/providers";
             <div class="text-xs text-gray-500">/ mes</div>
           </div>
         </div>
-
-        <!-- Best for description -->
         <p class="text-xs text-gray-400 leading-relaxed">${model.bestFor}</p>
-
-        <!-- Tags -->
         <div class="flex flex-wrap gap-1">
           ${model.tags.map(t => `<span class="text-xs px-2 py-0.5 rounded-full bg-gray-700/60 text-gray-400">${tagLabel(t)}</span>`).join("")}
         </div>
-
         <div class="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-700">
-          <span>${fmt(monthly / 30)} / día</span>
+          <span>${fmt(monthly / 30)}/día</span>
           <span>ctx: ${model.contextWindow}</span>
           <a href="${provider.signupUrl}" target="_blank" rel="noopener noreferrer"
-             class="text-violet-400 hover:text-violet-300 font-medium transition-colors">
-            Empezar →
-          </a>
+             class="text-violet-400 hover:text-violet-300 font-medium transition-colors">API →</a>
         </div>
       </div>
     `).join("");
   }
 
-  // Use case filter
-  document.querySelectorAll(".use-case-btn").forEach(btn => {
+  document.querySelectorAll(".dcase-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      activeCase = btn.dataset.case;
-      document.querySelectorAll(".use-case-btn").forEach(b => {
-        b.classList.remove("active", "border-violet-500", "bg-violet-500/10", "text-violet-300");
-        b.classList.add("border-gray-700", "text-gray-400");
+      activeDevCase = btn.dataset.case;
+      document.querySelectorAll(".dcase-btn").forEach(b => {
+        b.classList.remove("border-violet-500","bg-violet-500/10","text-violet-300");
+        b.classList.add("border-gray-700","text-gray-400");
       });
-      btn.classList.add("active", "border-violet-500", "bg-violet-500/10", "text-violet-300");
-      btn.classList.remove("border-gray-700", "text-gray-400");
-      render();
+      btn.classList.add("border-violet-500","bg-violet-500/10","text-violet-300");
+      btn.classList.remove("border-gray-700","text-gray-400");
+      renderDev();
     });
   });
 
-  inputEl.addEventListener("input", render);
-  outputEl.addEventListener("input", render);
+  inputEl.addEventListener("input", () => { clampInput(inputEl); renderDev(); });
+  outputEl.addEventListener("input", () => { clampInput(outputEl); renderDev(); });
 
   document.querySelectorAll(".preset-btn").forEach(btn => {
     btn.addEventListener("click", () => {
-      inputEl.value = btn.dataset.input;
+      inputEl.value  = btn.dataset.input;
       outputEl.value = btn.dataset.output;
-      render();
+      renderDev();
     });
   });
 
-  render();
+  // Init
+  renderUser();
 </script>
