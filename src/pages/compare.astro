@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { providers } from "../data/providers";
+import { providers, USE_CASES } from "../data/providers";
 ---
 
 <Layout
@@ -56,12 +56,13 @@ import { providers } from "../data/providers";
       <table class="w-full text-sm">
         <thead>
           <tr class="border-b border-gray-800 text-xs text-gray-500 uppercase tracking-wider">
-            <th class="text-left px-5 py-3 font-medium">Model</th>
+            <th class="text-left px-5 py-3 font-medium">Modelo</th>
+            <th class="text-left px-4 py-3 font-medium hidden md:table-cell">Mejor para</th>
             <th class="text-right px-4 py-3 font-medium">Input /1M</th>
             <th class="text-right px-4 py-3 font-medium">Output /1M</th>
-            <th class="text-right px-5 py-3 font-medium">Monthly cost</th>
-            <th class="text-right px-5 py-3 font-medium hidden sm:table-cell">Daily cost</th>
-            <th class="text-center px-4 py-3 font-medium">Context</th>
+            <th class="text-right px-5 py-3 font-medium">Costo mensual</th>
+            <th class="text-right px-5 py-3 font-medium hidden sm:table-cell">Costo diario</th>
+            <th class="text-center px-4 py-3 font-medium">Contexto</th>
             <th class="px-4 py-3"></th>
           </tr>
         </thead>
@@ -122,6 +123,10 @@ import { providers } from "../data/providers";
           <td class="px-5 py-3.5">
             <div class="text-xs font-medium mb-0.5" style="color:${provider.color}">${provider.name}</div>
             <div class="text-white font-medium">${model.name}</div>
+            ${model.badge ? `<div class="mt-0.5 text-xs text-violet-400">${model.badge}</div>` : ""}
+          </td>
+          <td class="px-4 py-3.5 hidden md:table-cell">
+            <div class="text-xs text-gray-400 max-w-[180px] leading-relaxed">${model.bestFor}</div>
           </td>
           <td class="text-right px-4 py-3.5 text-gray-400 font-mono text-xs">${fmtRate(model.inputPer1M)}</td>
           <td class="text-right px-4 py-3.5 text-gray-400 font-mono text-xs">${fmtRate(model.outputPer1M)}</td>

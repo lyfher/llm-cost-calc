@@ -1,6 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { providers } from "../data/providers";
+import { providers, USE_CASES } from "../data/providers";
 ---
 
 <Layout title="LLM Cost Calculator — Compare API Prices Instantly">
@@ -12,9 +12,30 @@ import { providers } from "../data/providers";
         LLM API Cost Calculator
       </h1>
       <p class="text-gray-400 text-lg max-w-xl mx-auto">
-        Enter your monthly token usage and instantly see what you'd pay across
-        every major AI provider.
+        Compara precios de todas las IAs en segundos. Filtra por lo que necesitas hacer.
       </p>
+    </div>
+
+    <!-- Use case filter -->
+    <div class="mb-8">
+      <p class="text-xs text-gray-500 uppercase tracking-wider mb-3 font-medium">¿Para qué la usas?</p>
+      <div class="flex flex-wrap gap-2" id="useCaseFilters">
+        <button
+          class="use-case-btn active text-xs px-3 py-2 rounded-lg border border-violet-500 bg-violet-500/10 text-violet-300 transition-all cursor-pointer"
+          data-case="all"
+        >
+          🌐 Todas
+        </button>
+        {USE_CASES.map(uc => (
+          <button
+            class="use-case-btn text-xs px-3 py-2 rounded-lg border border-gray-700 text-gray-400 hover:border-violet-500 hover:text-violet-300 transition-all cursor-pointer"
+            data-case={uc.id}
+            title={uc.description}
+          >
+            {uc.emoji} {uc.label}
+          </button>
+        ))}
+      </div>
     </div>
 
     <!-- Calculator card -->
@@ -23,7 +44,7 @@ import { providers } from "../data/providers";
       <div class="grid sm:grid-cols-2 gap-6 mb-8">
         <div>
           <label class="block text-sm font-medium text-gray-400 mb-2">
-            Input tokens / month
+            Input tokens / mes
           </label>
           <div class="flex items-center gap-3">
             <input
@@ -39,7 +60,7 @@ import { providers } from "../data/providers";
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-400 mb-2">
-            Output tokens / month
+            Output tokens / mes
           </label>
           <input
             id="outputTokens"
@@ -49,7 +70,7 @@ import { providers } from "../data/providers";
             max="1000000000"
             class="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white text-base focus:outline-none focus:border-violet-500 transition-colors"
           />
-          <p class="text-xs text-gray-600 mt-1">Usually 20–50% of input volume</p>
+          <p class="text-xs text-gray-600 mt-1">Generalmente 20–50% del volumen de input</p>
         </div>
       </div>
 
@@ -82,17 +103,18 @@ import { providers } from "../data/providers";
         href="/compare"
         class="inline-flex items-center gap-2 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
       >
-        Compare all models side by side →
+        Ver comparación completa →
       </a>
     </div>
 
   </main>
 </Layout>
 
-<script define:vars={{ providers }}>
+<script define:vars={{ providers, USE_CASES }}>
   const inputEl = document.getElementById("inputTokens");
   const outputEl = document.getElementById("outputTokens");
   const resultsEl = document.getElementById("results");
+  let activeCase = "all";
 
   function calcCost(inputTokens, outputTokens, inputPer1M, outputPer1M) {
     return (inputTokens / 1_000_000) * inputPer1M +
@@ -104,43 +126,77 @@ import { providers } from "../data/providers";
     return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  function tagLabel(tag) {
+    const uc = USE_CASES.find(u => u.id === tag);
+    return uc ? `${uc.emoji} ${uc.label}` : tag;
+  }
+
   function render() {
     const input = parseFloat(inputEl.value) || 0;
     const output = parseFloat(outputEl.value) || 0;
 
-    // Build flat list of all model results sorted by cost
     const rows = [];
     for (const provider of providers) {
       for (const model of provider.models) {
+        if (activeCase !== "all" && !model.tags.includes(activeCase)) continue;
         const monthly = calcCost(input, output, model.inputPer1M, model.outputPer1M);
         rows.push({ provider, model, monthly });
       }
     }
     rows.sort((a, b) => a.monthly - b.monthly);
 
+    if (rows.length === 0) {
+      resultsEl.innerHTML = `<div class="col-span-3 text-center text-gray-500 py-8">No hay modelos para este filtro.</div>`;
+      return;
+    }
+
     resultsEl.innerHTML = rows.map(({ provider, model, monthly }) => `
-      <div class="bg-gray-800/60 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors">
-        <div class="flex items-center justify-between mb-3">
-          <div>
+      <div class="bg-gray-800/60 border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-colors flex flex-col gap-3">
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0">
             <div class="text-xs font-medium uppercase tracking-wider mb-0.5" style="color:${provider.color}">${provider.name}</div>
             <div class="text-sm font-semibold text-white">${model.name}</div>
+            ${model.badge ? `<div class="mt-1 text-xs px-2 py-0.5 rounded-full bg-violet-500/15 text-violet-300 inline-block">${model.badge}</div>` : ""}
           </div>
-          <div class="text-right">
+          <div class="text-right ml-3 shrink-0">
             <div class="text-2xl font-bold text-white">${fmt(monthly)}</div>
-            <div class="text-xs text-gray-500">/ month</div>
+            <div class="text-xs text-gray-500">/ mes</div>
           </div>
         </div>
-        <div class="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-700">
-          <span>${fmt(monthly / 30)} / day</span>
+
+        <!-- Best for description -->
+        <p class="text-xs text-gray-400 leading-relaxed">${model.bestFor}</p>
+
+        <!-- Tags -->
+        <div class="flex flex-wrap gap-1">
+          ${model.tags.map(t => `<span class="text-xs px-2 py-0.5 rounded-full bg-gray-700/60 text-gray-400">${tagLabel(t)}</span>`).join("")}
+        </div>
+
+        <div class="flex items-center justify-between text-xs text-gray-500 pt-2 border-t border-gray-700">
+          <span>${fmt(monthly / 30)} / día</span>
           <span>ctx: ${model.contextWindow}</span>
           <a href="${provider.signupUrl}" target="_blank" rel="noopener noreferrer"
              class="text-violet-400 hover:text-violet-300 font-medium transition-colors">
-            Sign up →
+            Empezar →
           </a>
         </div>
       </div>
     `).join("");
   }
+
+  // Use case filter
+  document.querySelectorAll(".use-case-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeCase = btn.dataset.case;
+      document.querySelectorAll(".use-case-btn").forEach(b => {
+        b.classList.remove("active", "border-violet-500", "bg-violet-500/10", "text-violet-300");
+        b.classList.add("border-gray-700", "text-gray-400");
+      });
+      btn.classList.add("active", "border-violet-500", "bg-violet-500/10", "text-violet-300");
+      btn.classList.remove("border-gray-700", "text-gray-400");
+      render();
+    });
+  });
 
   inputEl.addEventListener("input", render);
   outputEl.addEventListener("input", render);
