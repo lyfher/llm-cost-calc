@@ -14,10 +14,6 @@ import { providers, USE_CASES, consumerProviders } from "../data/providers";
       <p class="text-gray-400 text-lg max-w-xl mx-auto">
         Encuentra la mejor IA para ti — ya sea que pagues una suscripción o uses la API para tu app.
       </p>
-      <a href="/quiz"
-        class="inline-flex items-center gap-2 mt-5 bg-violet-600 hover:bg-violet-500 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors">
-        ✨ No sé cuál elegir — hacer el test
-      </a>
     </div>
 
     <!-- MODE TOGGLE -->
@@ -62,6 +58,18 @@ import { providers, USE_CASES, consumerProviders } from "../data/providers";
           ))}
         </div>
       </div>
+
+      <!-- Quiz callout -->
+      <a href="/quiz" class="group flex items-center justify-between gap-4 bg-gray-900 border border-gray-800 hover:border-violet-500/50 rounded-2xl px-5 py-4 mb-8 transition-all">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🤔</span>
+          <div>
+            <p class="text-sm font-semibold text-white">¿No sabes cuál elegir?</p>
+            <p class="text-xs text-gray-500 mt-0.5">Responde 3 preguntas y te decimos qué IA y qué plan se adapta a ti</p>
+          </div>
+        </div>
+        <span class="text-xs font-semibold text-violet-400 group-hover:text-violet-300 whitespace-nowrap transition-colors">Hacer el test →</span>
+      </a>
 
       <!-- Consumer providers -->
       <div id="consumerGrid" class="space-y-6"></div>
