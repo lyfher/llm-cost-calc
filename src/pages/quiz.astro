@@ -1,0 +1,402 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="¿Qué IA te conviene? — Test rápido">
+  <main class="max-w-2xl mx-auto px-4 py-12">
+
+    <div class="text-center mb-10">
+      <h1 class="text-3xl sm:text-4xl font-bold text-white mb-3">
+        ¿Qué IA es para ti?
+      </h1>
+      <p class="text-gray-400">3 preguntas. Te decimos cuál usar y qué plan necesitas.</p>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="flex gap-2 mb-10" id="progressBar">
+      <div class="h-1 flex-1 rounded-full bg-violet-600 transition-all" id="p1"></div>
+      <div class="h-1 flex-1 rounded-full bg-gray-800 transition-all" id="p2"></div>
+      <div class="h-1 flex-1 rounded-full bg-gray-800 transition-all" id="p3"></div>
+    </div>
+
+    <!-- ── STEP 1 ──────────────────────────────────── -->
+    <div id="step1" class="quiz-step">
+      <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Pregunta 1 de 3</p>
+      <h2 class="text-xl font-semibold text-white mb-6">¿Para qué la usarás principalmente?</h2>
+      <div class="grid grid-cols-2 gap-3">
+        {[
+          { id: "chat",     emoji: "💬", label: "Chatear y preguntas del día" },
+          { id: "coding",   emoji: "💻", label: "Programar o depurar código" },
+          { id: "writing",  emoji: "✍️", label: "Redactar o crear contenido" },
+          { id: "research", emoji: "🔬", label: "Investigar y buscar info" },
+          { id: "docs",     emoji: "📄", label: "Resumir documentos largos" },
+          { id: "social",   emoji: "🐦", label: "Redes sociales / Twitter" },
+        ].map(o => (
+          <button class="q-btn text-left rounded-xl border border-gray-700 bg-gray-900 hover:border-violet-500 p-4 transition-all cursor-pointer"
+            data-step="1" data-val={o.id}>
+            <span class="text-2xl block mb-2">{o.emoji}</span>
+            <span class="text-sm font-medium text-gray-200">{o.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- ── STEP 2 ──────────────────────────────────── -->
+    <div id="step2" class="quiz-step hidden">
+      <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Pregunta 2 de 3</p>
+      <h2 class="text-xl font-semibold text-white mb-6">¿Con qué frecuencia la usarás?</h2>
+      <div class="grid grid-cols-1 gap-3">
+        {[
+          { id: "occasional", emoji: "🌿", label: "Pocas veces a la semana",    sub: "Uso casual o esporádico" },
+          { id: "daily",      emoji: "☀️", label: "Casi todos los días",        sub: "Hábito regular" },
+          { id: "heavy",      emoji: "⚡", label: "Varias horas al día",         sub: "Trabajo o proyectos serios" },
+        ].map(o => (
+          <button class="q-btn text-left rounded-xl border border-gray-700 bg-gray-900 hover:border-violet-500 p-4 transition-all cursor-pointer flex items-center gap-4"
+            data-step="2" data-val={o.id}>
+            <span class="text-3xl">{o.emoji}</span>
+            <div>
+              <div class="text-sm font-semibold text-white">{o.label}</div>
+              <div class="text-xs text-gray-500 mt-0.5">{o.sub}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- ── STEP 3 ──────────────────────────────────── -->
+    <div id="step3" class="quiz-step hidden">
+      <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Pregunta 3 de 3</p>
+      <h2 class="text-xl font-semibold text-white mb-6">¿Lo usarás más para…?</h2>
+      <div class="grid grid-cols-1 gap-3">
+        {[
+          { id: "personal", emoji: "🙋", label: "Uso personal",              sub: "Curiosidad, aprendizaje, ocio" },
+          { id: "work",     emoji: "💼", label: "Trabajo o proyectos serios", sub: "Productividad, clientes, negocio" },
+          { id: "both",     emoji: "🔀", label: "Ambas cosas",               sub: "Mezclado según el día" },
+        ].map(o => (
+          <button class="q-btn text-left rounded-xl border border-gray-700 bg-gray-900 hover:border-violet-500 p-4 transition-all cursor-pointer flex items-center gap-4"
+            data-step="3" data-val={o.id}>
+            <span class="text-3xl">{o.emoji}</span>
+            <div>
+              <div class="text-sm font-semibold text-white">{o.label}</div>
+              <div class="text-xs text-gray-500 mt-0.5">{o.sub}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <!-- ── RESULT ──────────────────────────────────── -->
+    <div id="result" class="hidden">
+      <div id="resultCard" class="rounded-2xl border p-7"></div>
+      <button id="retakeBtn" class="mt-6 w-full text-center text-sm text-gray-500 hover:text-gray-300 transition-colors cursor-pointer">
+        ← Volver a empezar
+      </button>
+    </div>
+
+  </main>
+</Layout>
+
+<script>
+  // ── State ────────────────────────────────────────
+  const answers: Record<string, string> = {}
+
+  // ── Recommendation engine ─────────────────────────
+  interface Rec {
+    logo: string
+    name: string
+    plan: string
+    price: string
+    color: string
+    headline: string
+    why: string[]
+    vs?: string          // brief note on runner-up
+    url: string
+  }
+
+  function recommend(use: string, freq: string, context: string): Rec {
+    const heavy = freq === "heavy"
+    const daily = freq === "daily" || heavy
+    const work  = context === "work" || context === "both"
+
+    // ── Social / Twitter ──────────────────────────
+    if (use === "social") {
+      return {
+        logo: "𝕏",
+        name: "Grok",
+        plan: heavy ? "SuperGrok ($30/mes)" : "Grok Free",
+        price: heavy ? "$30/mes" : "Gratis",
+        color: "#fff",
+        headline: "Grok es el mejor para redes sociales",
+        why: [
+          "Integrado nativamente en X (Twitter) — sin cambiar de app",
+          "Acceso en tiempo real a tweets y tendencias actuales",
+          "Genera respuestas, hilos y bios adaptados al tono de Twitter",
+          heavy ? "SuperGrok incluye generación de imágenes ilimitada" : "El plan gratis es más que suficiente para uso ocasional",
+        ],
+        vs: "ChatGPT también sirve para redactar posts, pero no tiene integración nativa con X",
+        url: heavy ? "https://x.com/i/premium_sign_up" : "https://x.com",
+      }
+    }
+
+    // ── Long documents ────────────────────────────
+    if (use === "docs") {
+      return {
+        logo: "◆",
+        name: "Claude",
+        plan: "Claude Pro ($20/mes)",
+        price: "$20/mes",
+        color: "#d4a96a",
+        headline: "Claude Pro es el rey de documentos largos",
+        why: [
+          "200,000 tokens de contexto — puede leer libros o contratos enteros de una vez",
+          "Retiene y conecta información a lo largo de documentos complejos",
+          "Excelente para resumir, comparar y extraer puntos clave",
+          "Modo Projects para mantener tus documentos organizados por tema",
+        ],
+        vs: "Gemini también tiene contexto largo (1M tokens), pero Claude analiza y razona mejor el contenido",
+        url: "https://claude.ai/upgrade",
+      }
+    }
+
+    // ── Research ──────────────────────────────────
+    if (use === "research") {
+      return {
+        logo: "🔍",
+        name: "Perplexity",
+        plan: daily ? "Perplexity Pro ($20/mes)" : "Perplexity Free",
+        price: daily ? "$20/mes" : "Gratis",
+        color: "#20b8cd",
+        headline: "Perplexity es el buscador potenciado con IA",
+        why: [
+          "Busca en internet en tiempo real y cita sus fuentes",
+          "Respuestas estructuradas con referencias verificables",
+          "Ideal para comparar productos, investigar temas y fact-checking",
+          daily ? "Pro desbloquea GPT-4o y Claude para preguntas más complejas" : "El plan gratis incluye búsqueda web ilimitada",
+        ],
+        vs: "ChatGPT con búsqueda web es similar, pero Perplexity está especializado y es más limpio para investigar",
+        url: daily ? "https://perplexity.ai/pro" : "https://perplexity.ai",
+      }
+    }
+
+    // ── Coding ────────────────────────────────────
+    if (use === "coding") {
+      if (heavy || work) {
+        return {
+          logo: "◆",
+          name: "Claude",
+          plan: "Claude Pro ($20/mes)",
+          price: "$20/mes",
+          color: "#d4a96a",
+          headline: "Claude Pro es el favorito de los desarrolladores",
+          why: [
+            "Claude 3.7 Sonnet lidera los benchmarks de código (HumanEval, SWE-bench)",
+            "Entiende proyectos enteros gracias a su ventana de 200K tokens",
+            "Excelente para refactorizar, depurar y explicar código complejo",
+            "Claude Projects te permite dar contexto persistente de tu codebase",
+          ],
+          vs: "ChatGPT Plus también es muy bueno para código, pero Claude suele dar respuestas más precisas en proyectos grandes",
+          url: "https://claude.ai/upgrade",
+        }
+      }
+      return {
+        logo: "◆",
+        name: "Claude",
+        plan: "Claude Free",
+        price: "Gratis",
+        color: "#d4a96a",
+        headline: "Claude Free ya es excelente para programar",
+        why: [
+          "Acceso a Claude 3.5 Sonnet gratis — uno de los mejores modelos de código",
+          "Suficiente para dudas puntuales, snippets y debugging",
+          "Entiende el contexto del código mejor que la mayoría",
+          "Cuando lo uses más intensamente, el salto a Pro ($20) vale la pena",
+        ],
+        vs: "ChatGPT Free también es buena opción, aunque Claude suele entender mejor proyectos con mucho código",
+        url: "https://claude.ai",
+      }
+    }
+
+    // ── Writing ───────────────────────────────────
+    if (use === "writing") {
+      if (heavy || work) {
+        return {
+          logo: "🤖",
+          name: "ChatGPT",
+          plan: "ChatGPT Plus ($20/mes)",
+          price: "$20/mes",
+          color: "#10a37f",
+          headline: "ChatGPT Plus es el mejor para crear contenido",
+          why: [
+            "GPT-4o tiene un estilo natural y adaptable a cualquier tono o formato",
+            "Memoria persistente: recuerda tu estilo, preferencias y proyectos anteriores",
+            "DALL·E incluido para generar imágenes que acompañen tu contenido",
+            "Canvas para editar documentos directamente con la IA al lado",
+          ],
+          vs: "Claude también escribe muy bien, pero ChatGPT tiene más herramientas (imágenes, memoria, plugins)",
+          url: "https://chatgpt.com/",
+        }
+      }
+      return {
+        logo: "🤖",
+        name: "ChatGPT",
+        plan: "ChatGPT Free",
+        price: "Gratis",
+        color: "#10a37f",
+        headline: "ChatGPT Free es perfecto para empezar a escribir",
+        why: [
+          "El más conocido y con la interfaz más intuitiva del mercado",
+          "GPT-4o mini gratis es muy bueno para textos cortos y medianos",
+          "Ideal para posts, emails, mensajes y contenido del día a día",
+          "Si lo usas intensamente, ChatGPT Plus ($20/mes) añade memoria y mejor modelo",
+        ],
+        vs: "Gemini Free también es opción, especialmente si ya usas Google Docs",
+        url: "https://chatgpt.com/",
+      }
+    }
+
+    // ── Chat / everyday (default) ─────────────────
+    if (heavy && work) {
+      return {
+        logo: "🤖",
+        name: "ChatGPT",
+        plan: "ChatGPT Plus ($20/mes)",
+        price: "$20/mes",
+        color: "#10a37f",
+        headline: "ChatGPT Plus para uso intensivo de trabajo",
+        why: [
+          "GPT-4o sin límites: la mejor versión sin restricciones de uso",
+          "Memoria: recuerda tu contexto, proyectos y preferencias entre conversaciones",
+          "Acceso a GPT-4o con búsqueda web, análisis de archivos y generación de imágenes",
+          "La opción más completa para quien usa la IA como herramienta de trabajo",
+        ],
+        vs: "Claude Pro ($20/mes) es igual de bueno si priorizas análisis y redacción",
+        url: "https://chatgpt.com/",
+      }
+    }
+
+    if (daily) {
+      return {
+        logo: "✦",
+        name: "Gemini",
+        plan: "Gemini Advanced ($20/mes)",
+        price: "$20/mes",
+        color: "#4285f4",
+        headline: "Gemini Advanced para el día a día",
+        why: [
+          "Incluido en Google One — si ya pagas Google One 2TB, lo tienes gratis",
+          "Integrado con Gmail, Docs y Drive para tu flujo de trabajo habitual",
+          "Gemini 2.5 Pro es uno de los modelos más potentes disponibles",
+          "Acceso de 1M de tokens de contexto para conversaciones largas",
+        ],
+        vs: "ChatGPT Plus también es excelente opción si no usas el ecosistema Google",
+        url: "https://one.google.com/about/plans",
+      }
+    }
+
+    // Occasional / personal → free
+    return {
+      logo: "✦",
+      name: "Gemini",
+      plan: "Gemini Free",
+      price: "Gratis",
+      color: "#4285f4",
+      headline: "Gemini Free es perfecto para empezar",
+      why: [
+        "Completamente gratis y sin límite de mensajes en uso básico",
+        "Se integra con tu cuenta de Google que ya tienes",
+        "Gemini Flash es rápido y más que suficiente para preguntas del día",
+        "Fácil de probar sin comprometerte con nada",
+      ],
+      vs: "ChatGPT Free también es muy buena alternativa con GPT-4o mini",
+      url: "https://gemini.google.com",
+    }
+  }
+
+  // ── Render result ─────────────────────────────────
+  function showResult() {
+    const rec = recommend(answers["1"], answers["2"], answers["3"])
+    const card = document.getElementById("resultCard")!
+
+    card.style.borderColor = rec.color + "40"
+    card.style.background = `linear-gradient(135deg, ${rec.color}08 0%, transparent 60%)`
+
+    card.innerHTML = `
+      <div class="flex items-center gap-3 mb-5">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center text-2xl font-bold" style="background:${rec.color}20;color:${rec.color}">${rec.logo}</div>
+        <div>
+          <div class="text-xs text-gray-500 uppercase tracking-wider mb-0.5">Tu recomendación</div>
+          <div class="text-xl font-bold text-white">${rec.name} <span class="font-normal text-gray-400 text-base">— ${rec.plan}</span></div>
+        </div>
+        <div class="ml-auto text-right">
+          <div class="text-2xl font-bold text-white">${rec.price}</div>
+        </div>
+      </div>
+
+      <p class="text-base font-semibold mb-4" style="color:${rec.color}">${rec.headline}</p>
+
+      <ul class="space-y-2.5 mb-6">
+        ${rec.why.map(w => `
+          <li class="flex items-start gap-2.5 text-sm text-gray-300">
+            <span style="color:${rec.color}" class="mt-0.5 shrink-0">✓</span>
+            ${w}
+          </li>
+        `).join("")}
+      </ul>
+
+      ${rec.vs ? `
+        <div class="rounded-lg bg-gray-800/60 border border-gray-700 px-4 py-3 mb-6 text-xs text-gray-400">
+          <span class="text-gray-300 font-medium">¿Y las demás?</span> ${rec.vs}
+        </div>
+      ` : ""}
+
+      <a href="${rec.url}" target="_blank" rel="noopener noreferrer"
+        class="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl font-semibold text-sm text-white transition-all"
+        style="background:${rec.color}">
+        Empezar con ${rec.name} ${rec.price === "Gratis" ? "gratis" : "→"}
+      </a>
+    `
+
+    document.getElementById("result")!.classList.remove("hidden")
+    document.getElementById("progressBar")!.querySelectorAll("div").forEach(d => {
+      d.style.background = rec.color
+    })
+  }
+
+  // ── Step navigation ────────────────────────────────
+  function showStep(n: number) {
+    document.querySelectorAll(".quiz-step").forEach(s => s.classList.add("hidden"))
+    document.getElementById(`step${n}`)?.classList.remove("hidden")
+    document.getElementById("result")!.classList.add("hidden")
+
+    const bars = document.getElementById("progressBar")!.querySelectorAll("div")
+    bars.forEach((b, i) => {
+      (b as HTMLElement).style.background = i < n ? "#7c3aed" : ""
+      b.className = `h-1 flex-1 rounded-full transition-all ${i < n ? "" : "bg-gray-800"}`
+    })
+  }
+
+  document.querySelectorAll(".q-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const step = (btn as HTMLElement).dataset.step!
+      const val  = (btn as HTMLElement).dataset.val!
+      answers[step] = val
+
+      if (step === "1") showStep(2)
+      else if (step === "2") showStep(3)
+      else {
+        // all answered
+        document.querySelectorAll(".quiz-step").forEach(s => s.classList.add("hidden"))
+        showResult()
+      }
+    })
+  })
+
+  document.getElementById("retakeBtn")!.addEventListener("click", () => {
+    Object.keys(answers).forEach(k => delete answers[k])
+    showStep(1)
+  })
+
+  // Init
+  showStep(1)
+</script>
+</Layout>
